@@ -11,6 +11,7 @@
 """
 
 import os
+import argparse
 import networkx as nx  # type: ignore
 from scipy.io import mmread  # type: ignore
 
@@ -239,28 +240,33 @@ def main():
     """
     Programın ana akış fonksiyonu. Tüm analiz adımlarını sırasıyla çalıştırır.
     """
-
     print("╔" + "═" * 63 + "╗")
-    print("║  ABD Elektrik Şebekesi – Kırılganlık Analizi (1. Sunum)      ║")
+    print("║  ABD Elektrik Şebekesi – Kırılganlık Analizi                 ║")
     print("║  Ders: Çizge Teorisinde Ölçüm Parametreleri                  ║")
     print("╚" + "═" * 63 + "╝")
 
-    # --- Adım 1: Veri Setini Yükle ---
-    # Veri seti dosyasının yolunu belirle (aynı dizinde olduğu varsayılır)
-    dataset_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "..",
-        "data",
-        "power-US-Grid",
-        "power-US-Grid.mtx"
+    # --- CLI (Terminal Argümanı) ENTEGRASYONU ---
+    parser = argparse.ArgumentParser(description="Elektrik Şebekesi Kırılganlık Analizi")
+    
+    # Varsayılan dosya yolunu yeni klasör yapısına göre (src -> data) dinamik hesapla
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    default_data_path = os.path.join(base_dir, "data", "power-US-Grid", "power-US-Grid.mtx")
+    
+    parser.add_argument(
+        "--data", 
+        type=str, 
+        default=default_data_path,
+        help="Veri setinin (.mtx) dosya yolu"
     )
+    args = parser.parse_args()
 
-    G = load_power_grid(dataset_path)
+    # --- Adım 1: Veri Setini Yükle ---
+    G = load_power_grid(args.data)
 
     # --- Adım 2: Temel Ağ Metriklerini Yazdır ---
     print_network_summary(G)
 
-    # --- Adım 3: Arasınalık Merkeziliğini Hesapla ---
+    # --- Adım 3: Arasındalık Merkeziliğini Hesapla ---
     bc = calculate_betweenness_centrality(G)
 
     # --- Adım 4: En Kritik 10 Düğümü Listele ---
@@ -274,9 +280,8 @@ def main():
     print("  ANALİZ TAMAMLANDI")
     print("=" * 65)
     print("  ✓ Ağ yapısı başarıyla yüklendi ve analiz edildi.")
-    print("  ✓ Arasınalık Merkeziliği hesaplandı.")
-    print(f"  ✓ En kritik düğüm: Düğüm {top_nodes[0][0]} "
-          f"(BC = {top_nodes[0][1]:.10f})")
+    print("  ✓ Arasındalık Merkeziliği hesaplandı.")
+    print(f"  ✓ En kritik düğüm: Düğüm {top_nodes[0][0]} (BC = {top_nodes[0][1]:.10f})")
     print(f"  ✓ LCC boyutu: {lcc_size:,} düğüm")
     print("=" * 65)
     print("\n  [SONRAKİ ADIM] Düğüm çıkarma simülasyonu ile")
